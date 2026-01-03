@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="300"
+             x:Class="UserSecretManager.Views.AboutDialog">
+
+    <Border Padding="24">
+        <StackPanel Spacing="16" Width="350">
+            <TextBlock Text="🔐" FontSize="48" HorizontalAlignment="Center"/>
+            <TextBlock Text=".NET User Secrets Manager" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="Version 1.0" HorizontalAlignment="Center" Opacity="0.7"/>
+            
+            <Border Height="1" Background="Gray" Margin="0,8"/>
+            
+            <TextBlock TextWrapping="Wrap" TextAlignment="Center" Opacity="0.8">
+                A desktop application for managing User Secrets across multiple .NET projects.
+            </TextBlock>
+            
+            <Border Height="1" Background="Gray" Margin="0,8"/>
+            
+            <StackPanel Spacing="4">
+                <TextBlock Text="Security Notice" FontWeight="Bold"/>
+                <TextBlock TextWrapping="Wrap" Opacity="0.8" FontSize="12">
+                    • All operations are performed locally
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap" Opacity="0.8" FontSize="12">
+                    • No data is transmitted over any network
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap" Opacity="0.8" FontSize="12">
+                    • No telemetry or analytics
+                </TextBlock>
+            </StackPanel>
+            
+            <TextBlock Text="© 2026 Simon" HorizontalAlignment="Center" Opacity="0.5" Margin="0,8,0,0"/>
+        </StackPanel>
+    </Border>
+</UserControl>

@@ -1,0 +1,160 @@
+<suki:SukiWindow xmlns="https://github.com/avaloniaui"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:vm="using:UserSecretManager.ViewModels"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:suki="using:SukiUI.Controls"
+                 xmlns:views="using:UserSecretManager.Views"
+                 mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+                 x:Class="UserSecretManager.Views.MainWindow"
+                 x:DataType="vm:MainWindowViewModel"
+                 Title=".NET User Secrets Manager"
+                 Width="1200" Height="800"
+                 MinWidth="800" MinHeight="600">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <DockPanel>
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open Folder..." Command="{Binding OpenFolderCommand}" InputGesture="Ctrl+O"/>
+                <Separator/>
+                <MenuItem Header="_Save" Command="{Binding SaveCurrentCommand}" InputGesture="Ctrl+S"/>
+                <MenuItem Header="Save _All" Command="{Binding SaveAllCommand}" InputGesture="Ctrl+Shift+S"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Click="OnExitClick"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Format JSON" Command="{Binding SelectedTab.FormatJsonCommand}" 
+                          IsEnabled="{Binding SelectedTab.IsValidJson}"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" Click="OnAboutClick"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Toolbar -->
+        <Border DockPanel.Dock="Top" Padding="8" Background="{DynamicResource SukiCardBackground}">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                    <Button Content="📂 Open Folder" Command="{Binding OpenFolderCommand}"/>
+                    <Button Content="💾 Save" Command="{Binding SaveCurrentCommand}" 
+                            IsEnabled="{Binding SelectedTab.IsDirty}"/>
+                    <Button Content="💾 Save All" Command="{Binding SaveAllCommand}"/>
+                </StackPanel>
+                
+                <TextBox Grid.Column="2" 
+                         Text="{Binding SearchText}" 
+                         Watermark="Search secrets..." 
+                         Width="250"/>
+            </Grid>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom" Padding="8,4" Background="{DynamicResource SukiCardBackground}">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" VerticalAlignment="Center"/>
+                
+                <TextBlock Grid.Column="1" Margin="16,0" VerticalAlignment="Center"
+                           IsVisible="{Binding SelectedTab, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <Run Text="GUID: "/>
+                    <Run Text="{Binding SelectedTab.UserSecretsId}" FontFamily="Consolas,Monaco,monospace"/>
+                </TextBlock>
+                
+                <Border Grid.Column="2" Margin="8,0" Padding="8,2" CornerRadius="4"
+                        IsVisible="{Binding SelectedTab, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Background="{Binding SelectedTab.IsValidJson, 
+                            Converter={StaticResource BoolToValidationColorConverter}}">
+                    <TextBlock Text="{Binding SelectedTab.IsValidJson, 
+                                   Converter={StaticResource BoolToValidationTextConverter}}"
+                               Foreground="White" FontWeight="Bold"/>
+                </Border>
+                
+                <TextBlock Grid.Column="3" Margin="8,0" VerticalAlignment="Center"
+                           IsVisible="{Binding SelectedTab.LastModified, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <Run Text="Last saved: "/>
+                    <Run Text="{Binding SelectedTab.LastModified, StringFormat='{}{0:HH:mm:ss}'}"/>
+                </TextBlock>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid>
+            <!-- Empty State -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                        IsVisible="{Binding !Tabs.Count}">
+                <TextBlock Text="🔐" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                <TextBlock Text=".NET User Secrets Manager" FontSize="24" FontWeight="Bold" 
+                           HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                <TextBlock Text="Open a folder to scan for .NET projects with User Secrets" 
+                           HorizontalAlignment="Center" Opacity="0.7" Margin="0,0,0,24"/>
+                <Button Content="📂 Open Folder" Command="{Binding OpenFolderCommand}" 
+                        HorizontalAlignment="Center" Padding="24,12"/>
+            </StackPanel>
+            
+            <!-- Loading State -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                        IsVisible="{Binding IsScanning}">
+                <suki:Loading/>
+                <TextBlock Text="Scanning for projects..." Margin="0,16,0,0" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Tabbed Content -->
+            <TabControl ItemsSource="{Binding Tabs}" 
+                        SelectedItem="{Binding SelectedTab}"
+                        IsVisible="{Binding Tabs.Count}">
+                <TabControl.ItemTemplate>
+                    <DataTemplate DataType="vm:ProjectTabViewModel">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding TabHeader}" VerticalAlignment="Center"/>
+                            <Button Content="✕" 
+                                    Command="{Binding $parent[TabControl].((vm:MainWindowViewModel)DataContext).CloseTabCommand}"
+                                    CommandParameter="{Binding}"
+                                    Padding="4,2" FontSize="10" Background="Transparent"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </TabControl.ItemTemplate>
+                <TabControl.ContentTemplate>
+                    <DataTemplate DataType="vm:ProjectTabViewModel">
+                        <Grid RowDefinitions="Auto,*">
+                            <!-- Project Info Header -->
+                            <Border Grid.Row="0" Padding="12" Background="{DynamicResource SukiCardBackground}"
+                                    Margin="0,0,0,8" CornerRadius="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Grid.Column="0" Spacing="4">
+                                        <TextBlock Text="{Binding ProjectName}" FontSize="18" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding ProjectPath}" Opacity="0.6" FontSize="12"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Format JSON" Command="{Binding FormatJsonCommand}"
+                                                IsEnabled="{Binding IsValidJson}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            
+                            <!-- JSON Editor (TextBox for now) -->
+                            <Border Grid.Row="1" CornerRadius="8" ClipToBounds="True"
+                                    BorderBrush="{DynamicResource SukiBorderBrush}" BorderThickness="1">
+                                <TextBox Text="{Binding Content}"
+                                         AcceptsReturn="True"
+                                         AcceptsTab="True"
+                                         TextWrapping="NoWrap"
+                                         FontFamily="Consolas,Monaco,Menlo,monospace"
+                                         FontSize="14"/>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </TabControl.ContentTemplate>
+            </TabControl>
+        </Grid>
+    </DockPanel>
+
+    <suki:SukiWindow.Resources>
+        <views:BoolToValidationColorConverter x:Key="BoolToValidationColorConverter"/>
+        <views:BoolToValidationTextConverter x:Key="BoolToValidationTextConverter"/>
+    </suki:SukiWindow.Resources>
+</suki:SukiWindow>
