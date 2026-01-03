@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UserSecretManager.Models;
@@ -28,6 +29,9 @@ public partial class ProjectTabViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isSearchMatch = true;
 
+    [ObservableProperty]
+    private AppSettingsFileViewModel? _selectedAppSettings;
+
     public string ProjectName => _secrets.Project.Name;
     public string UserSecretsId => _secrets.Project.UserSecretsId;
     public string ProjectPath => _secrets.Project.ProjectPath;
@@ -36,6 +40,9 @@ public partial class ProjectTabViewModel : ViewModelBase
     public DateTime? LastModified => _secrets.LastModified;
 
     public string TabHeader => IsDirty ? $"{ProjectName} *" : ProjectName;
+    
+    public ObservableCollection<AppSettingsFileViewModel> AppSettingsFiles { get; } = [];
+    public bool HasAppSettings => AppSettingsFiles.Count > 0;
 
     public ProjectTabViewModel(ProjectSecrets secrets, ISecretsService secretsService)
     {
@@ -44,6 +51,33 @@ public partial class ProjectTabViewModel : ViewModelBase
         _content = secrets.Content;
         _isValidJson = secrets.IsValidJson;
         _validationError = secrets.ValidationError;
+    }
+
+    public async Task LoadAppSettingsAsync()
+    {
+        AppSettingsFiles.Clear();
+        
+        foreach (var filePath in _secrets.Project.AppSettingsFiles)
+        {
+            try
+            {
+                var content = await File.ReadAllTextAsync(filePath);
+                var appSettings = new AppSettingsFile
+                {
+                    FilePath = filePath,
+                    Content = content,
+                    IsValidJson = _secretsService.ValidateJson(content).IsValid
+                };
+                AppSettingsFiles.Add(new AppSettingsFileViewModel(appSettings, _secretsService));
+            }
+            catch
+            {
+                // Skip files that can't be read
+            }
+        }
+
+        SelectedAppSettings = AppSettingsFiles.FirstOrDefault();
+        OnPropertyChanged(nameof(HasAppSettings));
     }
 
     partial void OnContentChanged(string value)

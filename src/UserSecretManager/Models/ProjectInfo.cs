@@ -16,6 +16,11 @@ public class ProjectInfo
     public required string ProjectPath { get; init; }
     
     /// <summary>
+    /// Directory containing the project.
+    /// </summary>
+    public string ProjectDirectory => Path.GetDirectoryName(ProjectPath) ?? string.Empty;
+    
+    /// <summary>
     /// The UserSecretsId GUID from the .csproj file.
     /// </summary>
     public required string UserSecretsId { get; init; }
@@ -29,4 +34,9 @@ public class ProjectInfo
     /// Whether the secrets.json file exists.
     /// </summary>
     public bool SecretsFileExists => File.Exists(SecretsFilePath);
+    
+    /// <summary>
+    /// Paths to appsettings*.json files found in the project directory.
+    /// </summary>
+    public List<string> AppSettingsFiles { get; init; } = [];
 }

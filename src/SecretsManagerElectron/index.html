@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:;">
+  <title>.NET User Secrets Manager</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>Projects</h2>
+        <button id="openFolderBtn" class="btn btn-primary" title="Open Folder">
+          <span class="icon">📂</span>
+        </button>
+      </div>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search projects...">
+      </div>
+      <ul id="projectList" class="project-list">
+        <li class="empty-state">Open a folder to scan for projects</li>
+      </ul>
+    </aside>
+
+    <!-- Sidebar Resizer -->
+    <div class="sidebar-resizer" id="sidebarResizer"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div id="welcomeScreen" class="welcome-screen">
+        <div class="welcome-content">
+          <h1>🔐 .NET User Secrets Manager</h1>
+          <p>Manage your .NET User Secrets with ease</p>
+          <button id="welcomeOpenBtn" class="btn btn-large btn-primary">
+            <span class="icon">📂</span> Open Folder
+          </button>
+        </div>
+      </div>
+
+      <div id="editorScreen" class="editor-screen" style="display: none;">
+        <!-- Header -->
+        <div class="editor-header">
+          <div class="project-info">
+            <h2 id="projectName">Project Name</h2>
+            <span id="userSecretsId" class="secrets-id"></span>
+          </div>
+          <div class="header-actions">
+            <span id="validationStatus" class="validation-status valid">✓ Valid JSON</span>
+          </div>
+        </div>
+
+        <!-- Editor Panels -->
+        <div class="editor-panels">
+          <!-- AppSettings Panel -->
+          <div class="panel appsettings-panel">
+            <div class="panel-header">
+              <span class="panel-title">📄 AppSettings</span>
+              <select id="appSettingsSelect" class="appsettings-select">
+                <option value="">No appsettings files</option>
+              </select>
+            </div>
+            <div id="appSettingsEditor" class="editor-container"></div>
+          </div>
+
+          <!-- Resizer -->
+          <div class="panel-resizer"></div>
+
+          <!-- Secrets Panel (with tabs for Azure Functions) -->
+          <div class="panel secrets-panel">
+            <div class="panel-header">
+              <div class="panel-tabs">
+                <button id="secretsTab" class="panel-tab active" data-tab="secrets">
+                  <span class="icon">🔐</span> User Secrets
+                </button>
+                <button id="localSettingsTab" class="panel-tab" data-tab="localSettings" style="display: none;">
+                  <span class="icon">⚡</span> local.settings.json
+                </button>
+              </div>
+              <div class="panel-header-actions">
+                <span id="validationBadge" class="validation-badge valid">✓</span>
+                <span id="validationError" class="validation-error" style="display: none;"></span>
+                <button id="formatBtn" class="btn btn-small" title="Format JSON">
+                  <span class="icon">✨</span> Format
+                </button>
+                <button id="saveBtn" class="btn btn-small btn-primary" disabled>
+                  <span class="icon">💾</span> Save
+                </button>
+              </div>
+            </div>
+            <div id="secretsEditor" class="editor-container"></div>
+            <div id="localSettingsEditor" class="editor-container" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

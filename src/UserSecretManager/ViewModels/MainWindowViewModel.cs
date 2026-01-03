@@ -23,12 +23,15 @@ public partial class MainWindowViewModel : ViewModelBase
     private string? _statusMessage;
 
     [ObservableProperty]
-    private ProjectTabViewModel? _selectedTab;
+    private ProjectListItemViewModel? _selectedProject;
+
+    [ObservableProperty]
+    private ProjectTabViewModel? _selectedSecrets;
 
     [ObservableProperty]
     private string _searchText = string.Empty;
 
-    public ObservableCollection<ProjectTabViewModel> Tabs { get; } = [];
+    public ObservableCollection<ProjectListItemViewModel> Projects { get; } = [];
 
     public MainWindowViewModel()
         : this(new ProjectScanner(), new SecretsService())
@@ -69,7 +72,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         IsScanning = true;
         StatusMessage = $"Scanning {path}...";
-        Tabs.Clear();
+        Projects.Clear();
+        SelectedProject = null;
+        SelectedSecrets = null;
 
         try
         {
@@ -84,12 +89,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
             foreach (var project in projects)
             {
-                var secrets = await _secretsService.LoadSecretsAsync(project);
-                var tab = new ProjectTabViewModel(secrets, _secretsService);
-                Tabs.Add(tab);
+                Projects.Add(new ProjectListItemViewModel(project));
             }
 
-            SelectedTab = Tabs.FirstOrDefault();
             StatusMessage = $"Found {projects.Count} project(s) with User Secrets";
         }
         catch (Exception ex)
@@ -102,15 +104,36 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
-    private async Task SaveCurrentAsync()
+    async partial void OnSelectedProjectChanged(ProjectListItemViewModel? value)
     {
-        if (SelectedTab is null) return;
+        if (value is null)
+        {
+            SelectedSecrets = null;
+            return;
+        }
 
         try
         {
-            await SelectedTab.SaveAsync();
-            StatusMessage = $"Saved {SelectedTab.ProjectName}";
+            var secrets = await _secretsService.LoadSecretsAsync(value.Project);
+            var viewModel = new ProjectTabViewModel(secrets, _secretsService);
+            await viewModel.LoadAppSettingsAsync();
+            SelectedSecrets = viewModel;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error loading secrets: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SaveCurrentAsync()
+    {
+        if (SelectedSecrets is null) return;
+
+        try
+        {
+            await SelectedSecrets.SaveAsync();
+            StatusMessage = $"Saved {SelectedSecrets.ProjectName}";
         }
         catch (Exception ex)
         {
@@ -121,46 +144,25 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task SaveAllAsync()
     {
-        var dirtyTabs = Tabs.Where(t => t.IsDirty).ToList();
-        if (dirtyTabs.Count == 0)
+        // With the new model, we only have one loaded at a time
+        // This could be enhanced later to track all modified secrets
+        if (SelectedSecrets?.IsDirty == true)
+        {
+            await SaveCurrentAsync();
+        }
+        else
         {
             StatusMessage = "No changes to save";
-            return;
-        }
-
-        try
-        {
-            foreach (var tab in dirtyTabs)
-            {
-                await tab.SaveAsync();
-            }
-            StatusMessage = $"Saved {dirtyTabs.Count} file(s)";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Error saving: {ex.Message}";
-        }
-    }
-
-    [RelayCommand]
-    private void CloseTab(ProjectTabViewModel tab)
-    {
-        var index = Tabs.IndexOf(tab);
-        Tabs.Remove(tab);
-        
-        if (SelectedTab == tab)
-        {
-            SelectedTab = Tabs.ElementAtOrDefault(Math.Max(0, index - 1));
         }
     }
 
     partial void OnSearchTextChanged(string value)
     {
-        // Basic search implementation - highlight matching tabs
-        foreach (var tab in Tabs)
+        // Filter projects by name or search in secrets content
+        foreach (var project in Projects)
         {
-            tab.IsSearchMatch = string.IsNullOrWhiteSpace(value) ||
-                                tab.Content.Contains(value, StringComparison.OrdinalIgnoreCase);
+            project.IsVisible = string.IsNullOrWhiteSpace(value) ||
+                                project.Name.Contains(value, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

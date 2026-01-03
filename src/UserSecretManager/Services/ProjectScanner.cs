@@ -45,7 +45,12 @@ public class ProjectScanner : IProjectScanner
             }
         }
 
-        return projects.OrderBy(p => p.Name).ToList();
+        // Deduplicate by UserSecretsId - multiple projects can share the same secrets file
+        return projects
+            .GroupBy(p => p.UserSecretsId)
+            .Select(g => g.First())
+            .OrderBy(p => p.Name)
+            .ToList();
     }
 
     /// <summary>
@@ -66,20 +71,48 @@ public class ProjectScanner : IProjectScanner
             }
 
             var projectName = Path.GetFileNameWithoutExtension(csprojPath);
+            var projectDirectory = Path.GetDirectoryName(csprojPath) ?? string.Empty;
             var secretsPath = GetSecretsFilePath(userSecretsId);
+            
+            // Find appsettings files in the project directory
+            var appSettingsFiles = FindAppSettingsFiles(projectDirectory);
 
             return new ProjectInfo
             {
                 Name = projectName,
                 ProjectPath = csprojPath,
                 UserSecretsId = userSecretsId,
-                SecretsFilePath = secretsPath
+                SecretsFilePath = secretsPath,
+                AppSettingsFiles = appSettingsFiles
             };
         }
         catch (Exception)
         {
             // Log or handle parsing errors gracefully
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Finds all appsettings*.json files in the project directory.
+    /// </summary>
+    private static List<string> FindAppSettingsFiles(string projectDirectory)
+    {
+        if (string.IsNullOrEmpty(projectDirectory) || !Directory.Exists(projectDirectory))
+        {
+            return [];
+        }
+
+        try
+        {
+            return Directory.GetFiles(projectDirectory, "appsettings*.json")
+                .OrderBy(f => f.Length) // appsettings.json first, then appsettings.Development.json, etc.
+                .ThenBy(f => f)
+                .ToList();
+        }
+        catch
+        {
+            return [];
         }
     }
 
