@@ -2,6 +2,7 @@
   "name": "user-secrets-manager",
   "version": "1.0.0",
   "description": "User Secrets Manager - Manage your .NET User Secrets with ease",
+  "homepage": "https://github.com/sholman/UserSecretManager",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -17,7 +18,10 @@
     "user-secrets",
     "secrets-manager"
   ],
-  "author": "",
+  "author": {
+    "name": "Simon Holman",
+    "email": "simon@simonholman.dev"
+  },
   "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
