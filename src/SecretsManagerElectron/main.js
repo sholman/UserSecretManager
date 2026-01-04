@@ -1,9 +1,14 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
 let mainWindow;
+
+// Configure auto-updater
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
 let isDemoMode = process.argv.includes('--demo');
 
 function createMenu() {
@@ -95,9 +100,85 @@ function createWindow() {
   mainWindow.loadFile('index.html');
 }
 
+// Auto-updater setup
+function setupAutoUpdater() {
+  autoUpdater.on('checking-for-update', () => {
+    console.log('Checking for updates...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('Update available:', info.version);
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: `A new version (${info.version}) is available. Would you like to download it now?`,
+      buttons: ['Download', 'Later'],
+      defaultId: 0
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.downloadUpdate();
+      }
+    });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('No updates available');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    console.log(`Download progress: ${Math.round(progress.percent)}%`);
+    mainWindow.webContents.send('update-progress', progress.percent);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('Update downloaded');
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Ready',
+      message: `Version ${info.version} has been downloaded. Restart now to install?`,
+      buttons: ['Restart', 'Later'],
+      defaultId: 0
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('Auto-updater error:', err);
+  });
+}
+
 app.whenReady().then(() => {
   createMenu();
   createWindow();
+  
+  // Check for updates after a short delay (only in production)
+  if (!isDemoMode && app.isPackaged) {
+    setTimeout(() => {
+      setupAutoUpdater();
+      autoUpdater.checkForUpdates();
+    }, 3000);
+  }
+});
+
+// IPC handler for manual update check
+ipcMain.handle('check-for-updates', async () => {
+  if (!app.isPackaged) {
+    return { available: false, message: 'Updates are only available in the packaged app' };
+  }
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return { available: result !== null, version: result?.updateInfo?.version };
+  } catch (error) {
+    return { available: false, error: error.message };
+  }
+});
+
+// IPC handler for getting app version
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
 });
 
 app.on('window-all-closed', () => {
