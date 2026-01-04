@@ -1,9 +1,81 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
 let mainWindow;
+let isDemoMode = process.argv.includes('--demo');
+
+function createMenu() {
+  const isMac = process.platform === 'darwin';
+  
+  const template = [
+    // App menu (macOS only)
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+    // File menu
+    {
+      label: 'File',
+      submenu: [
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    // Edit menu (minimal - just for copy/paste in editor)
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' }
+      ]
+    },
+    // View menu
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    // Window menu
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        ...(isMac ? [
+          { type: 'separator' },
+          { role: 'front' }
+        ] : [
+          { role: 'close' }
+        ])
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -23,7 +95,10 @@ function createWindow() {
   mainWindow.loadFile('index.html');
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createMenu();
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -245,4 +320,203 @@ ipcMain.handle('save-local-settings', async (event, filePath, content) => {
 
 ipcMain.handle('load-appsettings', async (event, filePath) => {
   return await loadAppSettings(filePath);
+});
+
+ipcMain.handle('open-in-explorer', async (event, folderPath) => {
+  shell.showItemInFolder(folderPath);
+});
+
+ipcMain.handle('get-platform', () => {
+  return process.platform;
+});
+
+ipcMain.handle('is-demo-mode', () => {
+  return isDemoMode;
+});
+
+ipcMain.handle('get-demo-data', () => {
+  const isMac = process.platform === 'darwin';
+  const basePath = isMac 
+    ? '/Users/developer/Projects/Contoso'
+    : 'C:\\Development\\Contoso';
+  const sep = isMac ? '/' : '\\';
+  const secretsBase = isMac
+    ? '/Users/developer/.microsoft/usersecrets'
+    : 'C:\\Users\\Developer\\AppData\\Roaming\\Microsoft\\UserSecrets';
+
+  return {
+    folderPath: basePath,
+    projects: [
+      {
+        name: 'Contoso.WebApp',
+        projectPath: `${basePath}${sep}src${sep}Contoso.WebApp${sep}Contoso.WebApp.csproj`,
+        projectDir: `${basePath}${sep}src${sep}Contoso.WebApp`,
+        userSecretsId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        secretsFilePath: `${secretsBase}${sep}a1b2c3d4-e5f6-7890-abcd-ef1234567890${sep}secrets.json`,
+        secretsFileExists: true,
+        appSettingsFiles: [
+          `${basePath}${sep}src${sep}Contoso.WebApp${sep}appsettings.json`,
+          `${basePath}${sep}src${sep}Contoso.WebApp${sep}appsettings.Development.json`,
+          `${basePath}${sep}src${sep}Contoso.WebApp${sep}appsettings.Production.json`
+        ],
+        isAzureFunctions: false,
+        localSettingsPath: null
+      },
+      {
+        name: 'Contoso.Api',
+        projectPath: `${basePath}${sep}src${sep}Contoso.Api${sep}Contoso.Api.csproj`,
+        projectDir: `${basePath}${sep}src${sep}Contoso.Api`,
+        userSecretsId: 'b2c3d4e5-f6a7-8901-bcde-f23456789012',
+        secretsFilePath: `${secretsBase}${sep}b2c3d4e5-f6a7-8901-bcde-f23456789012${sep}secrets.json`,
+        secretsFileExists: true,
+        appSettingsFiles: [
+          `${basePath}${sep}src${sep}Contoso.Api${sep}appsettings.json`,
+          `${basePath}${sep}src${sep}Contoso.Api${sep}appsettings.Development.json`
+        ],
+        isAzureFunctions: false,
+        localSettingsPath: null
+      },
+      {
+        name: 'Contoso.Functions',
+        projectPath: `${basePath}${sep}src${sep}Contoso.Functions${sep}Contoso.Functions.csproj`,
+        projectDir: `${basePath}${sep}src${sep}Contoso.Functions`,
+        userSecretsId: 'c3d4e5f6-a7b8-9012-cdef-345678901234',
+        secretsFilePath: `${secretsBase}${sep}c3d4e5f6-a7b8-9012-cdef-345678901234${sep}secrets.json`,
+        secretsFileExists: true,
+        appSettingsFiles: [
+          `${basePath}${sep}src${sep}Contoso.Functions${sep}appsettings.json`
+        ],
+        isAzureFunctions: true,
+        localSettingsPath: `${basePath}${sep}src${sep}Contoso.Functions${sep}local.settings.json`
+      },
+      {
+        name: 'Contoso.WorkerService',
+        projectPath: `${basePath}${sep}src${sep}Contoso.WorkerService${sep}Contoso.WorkerService.csproj`,
+        projectDir: `${basePath}${sep}src${sep}Contoso.WorkerService`,
+        userSecretsId: 'd4e5f6a7-b8c9-0123-defa-456789012345',
+        secretsFilePath: `${secretsBase}${sep}d4e5f6a7-b8c9-0123-defa-456789012345${sep}secrets.json`,
+        secretsFileExists: false,
+        appSettingsFiles: [
+          `${basePath}${sep}src${sep}Contoso.WorkerService${sep}appsettings.json`,
+          `${basePath}${sep}src${sep}Contoso.WorkerService${sep}appsettings.Development.json`
+        ],
+        isAzureFunctions: false,
+        localSettingsPath: null
+      },
+      {
+        name: 'Contoso.IdentityServer',
+        projectPath: `${basePath}${sep}src${sep}Contoso.IdentityServer${sep}Contoso.IdentityServer.csproj`,
+        projectDir: `${basePath}${sep}src${sep}Contoso.IdentityServer`,
+        userSecretsId: 'e5f6a7b8-c9d0-1234-efab-567890123456',
+        secretsFilePath: `${secretsBase}${sep}e5f6a7b8-c9d0-1234-efab-567890123456${sep}secrets.json`,
+        secretsFileExists: true,
+        appSettingsFiles: [
+          `${basePath}${sep}src${sep}Contoso.IdentityServer${sep}appsettings.json`,
+          `${basePath}${sep}src${sep}Contoso.IdentityServer${sep}appsettings.Development.json`,
+          `${basePath}${sep}src${sep}Contoso.IdentityServer${sep}appsettings.Production.json`,
+          `${basePath}${sep}src${sep}Contoso.IdentityServer${sep}appsettings.Staging.json`
+        ],
+        isAzureFunctions: false,
+        localSettingsPath: null
+      },
+      {
+        name: 'Contoso.BackgroundJobs',
+        projectPath: `${basePath}${sep}src${sep}Contoso.BackgroundJobs${sep}Contoso.BackgroundJobs.csproj`,
+        projectDir: `${basePath}${sep}src${sep}Contoso.BackgroundJobs`,
+        userSecretsId: 'f6a7b8c9-d0e1-2345-fabc-678901234567',
+        secretsFilePath: `${secretsBase}${sep}f6a7b8c9-d0e1-2345-fabc-678901234567${sep}secrets.json`,
+        secretsFileExists: true,
+        appSettingsFiles: [
+          `${basePath}${sep}src${sep}Contoso.BackgroundJobs${sep}appsettings.json`
+        ],
+        isAzureFunctions: false,
+        localSettingsPath: null,
+        hasInvalidJson: true
+      }
+    ],
+    demoSecrets: JSON.stringify({
+      "ConnectionStrings": {
+        "DefaultConnection": "Server=localhost;Database=ContosoDb;User Id=sa;Password=**********;",
+        "Redis": "localhost:6379,password=**********"
+      },
+      "Authentication": {
+        "Google": {
+          "ClientId": "123456789-abcdefghijklmnop.apps.googleusercontent.com",
+          "ClientSecret": "GOCSPX-**********"
+        },
+        "Microsoft": {
+          "ClientId": "12345678-1234-1234-1234-123456789012",
+          "ClientSecret": "abc123~**********"
+        }
+      },
+      "Smtp": {
+        "Host": "smtp.sendgrid.net",
+        "Port": 587,
+        "Username": "apikey",
+        "Password": "SG.**********"
+      },
+      "Azure": {
+        "StorageConnectionString": "DefaultEndpointsProtocol=https;AccountName=contosostorage;AccountKey=**********;EndpointSuffix=core.windows.net",
+        "ServiceBusConnectionString": "Endpoint=sb://contoso.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=**********"
+      },
+      "Stripe": {
+        "SecretKey": "sk_test_**********",
+        "WebhookSecret": "whsec_**********"
+      }
+    }, null, 2),
+    demoAppSettings: JSON.stringify({
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "AllowedHosts": "*",
+      "ConnectionStrings": {
+        "DefaultConnection": "",
+        "Redis": ""
+      },
+      "Authentication": {
+        "Google": {
+          "ClientId": "",
+          "ClientSecret": ""
+        },
+        "Microsoft": {
+          "ClientId": "",
+          "ClientSecret": ""
+        }
+      },
+      "Features": {
+        "EnableNewDashboard": true,
+        "EnableBetaFeatures": false
+      }
+    }, null, 2),
+    demoLocalSettings: JSON.stringify({
+      "IsEncrypted": false,
+      "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+        "ServiceBus:Connection": "Endpoint=sb://contoso-dev.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=**********",
+        "CosmosDb:Connection": "AccountEndpoint=https://contoso-dev.documents.azure.com:443/;AccountKey=**********;",
+        "CosmosDb:DatabaseName": "contoso-db",
+        "CosmosDb:ContainerName": "items",
+        "Authentication:Google:ClientId": "123456789-abcdefghijklmnop.apps.googleusercontent.com",
+        "Authentication:Google:ClientSecret": "GOCSPX-**********",
+        "Smtp:Host": "smtp.sendgrid.net",
+        "Smtp:Port": "587",
+        "Smtp:ApiKey": "SG.**********",
+        "FeatureFlags:EnableNewFeature": "true",
+        "FeatureFlags:MaxRetryCount": "3"
+      }
+    }, null, 2),
+    demoInvalidSecrets: `{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=JobsDb;Password=**********"
+    "Redis": "localhost:6379"
+  },
+  "ApiKeys": {
+    "SendGrid": "SG.**********",
+  }
+}`
+  };
 });

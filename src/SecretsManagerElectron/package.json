@@ -4,7 +4,8 @@
   "description": ".NET User Secrets Manager",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "demo": "electron . --demo"
   },
   "keywords": ["dotnet", "user-secrets", "secrets-manager"],
   "author": "",

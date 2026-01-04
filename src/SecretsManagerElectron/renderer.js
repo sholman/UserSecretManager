@@ -3,9 +3,14 @@ let appSettingsEditor = null;
 let secretsEditor = null;
 let localSettingsEditor = null;
 let currentProject = null;
+let currentFolderPath = null;
 let isDirty = false;
 let isLocalSettingsDirty = false;
 let activeTab = 'secrets'; // 'secrets' or 'localSettings'
+let platform = 'win32'; // Default, will be updated on init
+let isDemoMode = false;
+let demoData = null;
+let currentValidationError = null;
 
 // Load Monaco Editor
 const monacoPath = './node_modules/monaco-editor/min/vs';
@@ -108,7 +113,6 @@ async function initEditors() {
     isDirty = true;
     if (activeTab === 'secrets') {
       updateSaveButton();
-      updateValidationBadge();
     }
     updateHeaderValidation();
   });
@@ -118,8 +122,8 @@ async function initEditors() {
     isLocalSettingsDirty = true;
     if (activeTab === 'localSettings') {
       updateSaveButton();
-      updateValidationBadge();
     }
+    updateHeaderValidation();
   });
 }
 
@@ -147,7 +151,7 @@ function switchTab(tab) {
   }
   
   updateSaveButton();
-  updateValidationBadge();
+  updateHeaderValidation();
 }
 
 // Validate JSON for current active editor
@@ -231,22 +235,89 @@ function parseJsonc(content) {
     
     if (match) {
       const pos = parseInt(match[1]);
-      // Find line and column
+      // Find line and column in original content (not stripped)
       let line = 1;
       let col = 1;
-      for (let i = 0; i < pos && i < stripped.length; i++) {
-        if (stripped[i] === '\n') {
+      for (let i = 0; i < pos && i < content.length; i++) {
+        if (content[i] === '\n') {
           line++;
           col = 1;
         } else {
           col++;
         }
       }
-      errorMsg = `Line ${line}, Col ${col}: ${e.message.replace(/at position \d+/, '').trim()}`;
+      
+      // Get context around the error position
+      const lines = content.split('\n');
+      const errorLine = lines[line - 1] || '';
+      const prevLine = line > 1 ? lines[line - 2] : '';
+      
+      // Analyze the error and provide helpful message
+      errorMsg = getHelpfulErrorMessage(e.message, line, errorLine, prevLine);
     }
     
     return { valid: false, error: errorMsg };
   }
+}
+
+// Provide more helpful JSON error messages
+function getHelpfulErrorMessage(originalError, line, errorLine, prevLine) {
+  const lowerError = originalError.toLowerCase();
+  const trimmedErrorLine = errorLine.trim();
+  const trimmedPrevLine = prevLine.trim();
+  
+  // Check for trailing comma on previous line
+  if (trimmedPrevLine.endsWith(',') && (trimmedErrorLine.startsWith('}') || trimmedErrorLine.startsWith(']'))) {
+    return `Line ${line - 1}: Trailing comma before closing bracket. Remove the comma at the end of line ${line - 1}.`;
+  }
+  
+  // Check for missing comma on previous line
+  if (trimmedPrevLine && !trimmedPrevLine.endsWith(',') && !trimmedPrevLine.endsWith('{') && 
+      !trimmedPrevLine.endsWith('[') && !trimmedPrevLine.endsWith(':') &&
+      trimmedErrorLine && !trimmedErrorLine.startsWith('}') && !trimmedErrorLine.startsWith(']')) {
+    if (lowerError.includes('expected') || lowerError.includes('unexpected')) {
+      return `Line ${line - 1}: Missing comma. Add a comma at the end of line ${line - 1}.`;
+    }
+  }
+  
+  // Trailing comma before end of object/array
+  if (lowerError.includes('unexpected token') && (trimmedErrorLine.startsWith('}') || trimmedErrorLine.startsWith(']'))) {
+    return `Line ${line}: Unexpected closing bracket. Check for a trailing comma on the previous line.`;
+  }
+  
+  // Missing colon
+  if (lowerError.includes('expected \':\'') || (lowerError.includes('unexpected') && errorLine.includes('"') && !errorLine.includes(':'))) {
+    return `Line ${line}: Missing colon after property name.`;
+  }
+  
+  // Unterminated string
+  if (lowerError.includes('unterminated string') || lowerError.includes('bad string')) {
+    return `Line ${line}: Unterminated string. Check for missing closing quote.`;
+  }
+  
+  // Unexpected end
+  if (lowerError.includes('unexpected end') || lowerError.includes('end of json')) {
+    return `Missing closing bracket or brace. Check that all { } and [ ] are properly matched.`;
+  }
+  
+  // Single quotes instead of double quotes
+  if (errorLine.includes("'")) {
+    return `Line ${line}: JSON requires double quotes ("), not single quotes (').`;
+  }
+  
+  // Generic unexpected token
+  if (lowerError.includes('unexpected token')) {
+    return `Line ${line}: Syntax error. Common causes: missing comma on previous line, trailing comma, or unquoted string.`;
+  }
+  
+  // Fallback to cleaned up original message
+  const cleanError = originalError
+    .replace(/at position \d+/gi, '')
+    .replace(/in JSON/gi, '')
+    .replace(/Unexpected token/gi, 'Syntax error')
+    .trim();
+  
+  return `Line ${line}: ${cleanError}`;
 }
 
 // Validate JSON in secrets editor
@@ -261,41 +332,68 @@ function validateLocalSettingsJson() {
   return parseJsonc(content).valid;
 }
 
-// Update header validation status (always shows secrets status)
+// Update header validation status (shows status for active tab)
 function updateHeaderValidation() {
   const statusEl = document.getElementById('validationStatus');
-  const content = secretsEditor.getValue();
-  const result = parseJsonc(content);
-  
-  if (result.valid) {
-    statusEl.textContent = '✓ Valid JSON';
-    statusEl.className = 'validation-status valid';
-    statusEl.title = '';
-  } else {
-    statusEl.textContent = '✗ Invalid JSON';
-    statusEl.className = 'validation-status invalid';
-    statusEl.title = result.error;
-  }
-}
-
-// Update validation badge in panel header
-function updateValidationBadge() {
-  const badgeEl = document.getElementById('validationBadge');
-  const errorEl = document.getElementById('validationError');
   const editor = activeTab === 'secrets' ? secretsEditor : localSettingsEditor;
   const content = editor.getValue();
   const result = parseJsonc(content);
   
   if (result.valid) {
-    badgeEl.textContent = '✓';
-    badgeEl.className = 'validation-badge valid';
-    errorEl.style.display = 'none';
+    statusEl.textContent = '✓ Valid JSON';
+    statusEl.className = 'validation-status valid';
+    statusEl.style.cursor = 'default';
+    currentValidationError = null;
   } else {
-    badgeEl.textContent = '✗';
-    badgeEl.className = 'validation-badge invalid';
-    errorEl.textContent = result.error;
-    errorEl.style.display = 'inline';
+    statusEl.textContent = '✗ Invalid JSON';
+    statusEl.className = 'validation-status invalid';
+    statusEl.style.cursor = 'pointer';
+    currentValidationError = result.error;
   }
+}
+
+// Show validation error popup
+function showValidationErrorPopup() {
+  if (!currentValidationError) return;
+  
+  // Remove any existing popup
+  const existingPopup = document.querySelector('.error-popup');
+  if (existingPopup) existingPopup.remove();
+  
+  const popup = document.createElement('div');
+  popup.className = 'error-popup';
+  popup.innerHTML = `
+    <div class="error-popup-header">
+      <span class="error-popup-title">⚠️ JSON Validation Error</span>
+      <button class="error-popup-close">✕</button>
+    </div>
+    <div class="error-popup-content">${currentValidationError}</div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  // Position near the validation status
+  const statusEl = document.getElementById('validationStatus');
+  const statusRect = statusEl.getBoundingClientRect();
+  popup.style.top = `${statusRect.bottom + 8}px`;
+  popup.style.right = `${window.innerWidth - statusRect.right}px`;
+  
+  // Close button handler
+  popup.querySelector('.error-popup-close').addEventListener('click', () => {
+    popup.remove();
+  });
+  
+  // Close on click outside
+  const closePopup = (event) => {
+    if (!popup.contains(event.target) && event.target !== statusEl) {
+      popup.remove();
+      document.removeEventListener('click', closePopup);
+    }
+  };
+  
+  setTimeout(() => {
+    document.addEventListener('click', closePopup);
+  }, 0);
 }
 
 // Update save button state
@@ -346,9 +444,13 @@ async function loadProject(project) {
   if (project.isAzureFunctions && project.localSettingsPath) {
     localSettingsTab.style.display = 'inline-flex';
     
-    // Load local.settings.json
-    const localSettingsContent = await window.electronAPI.loadAppSettings(project.localSettingsPath);
-    localSettingsEditor.setValue(localSettingsContent);
+    // Load local.settings.json (use demo data if in demo mode)
+    if (isDemoMode && demoData) {
+      localSettingsEditor.setValue(demoData.demoLocalSettings);
+    } else {
+      const localSettingsContent = await window.electronAPI.loadAppSettings(project.localSettingsPath);
+      localSettingsEditor.setValue(localSettingsContent);
+    }
     isLocalSettingsDirty = false;
   } else {
     localSettingsTab.style.display = 'none';
@@ -358,9 +460,18 @@ async function loadProject(project) {
     }
   }
   
-  // Load secrets
-  const secretsContent = await window.electronAPI.loadSecrets(project.secretsFilePath);
-  secretsEditor.setValue(secretsContent);
+  // Load secrets (use demo data if in demo mode)
+  if (isDemoMode && demoData) {
+    // Use invalid JSON for the project marked with hasInvalidJson
+    if (project.hasInvalidJson) {
+      secretsEditor.setValue(demoData.demoInvalidSecrets);
+    } else {
+      secretsEditor.setValue(demoData.demoSecrets);
+    }
+  } else {
+    const secretsContent = await window.electronAPI.loadSecrets(project.secretsFilePath);
+    secretsEditor.setValue(secretsContent);
+  }
   isDirty = false;
   
   // Reset to secrets tab and update UI
@@ -378,10 +489,12 @@ async function loadProject(project) {
     for (const file of project.appSettingsFiles) {
       const option = document.createElement('option');
       option.value = file;
-      option.textContent = file.split('/').pop();
+      // Show just the filename
+      const fileName = file.split(/[\\/]/).pop();
+      option.textContent = fileName;
       select.appendChild(option);
     }
-    // Load first appsettings file (should be appsettings.json due to sorting)
+    // Load first appsettings file
     await loadAppSettings(project.appSettingsFiles[0]);
   }
   
@@ -393,6 +506,11 @@ async function loadProject(project) {
 
 // Load appsettings file
 async function loadAppSettings(filePath) {
+  // Use demo data if in demo mode
+  if (isDemoMode && demoData) {
+    appSettingsEditor.setValue(demoData.demoAppSettings);
+    return;
+  }
   const content = await window.electronAPI.loadAppSettings(filePath);
   appSettingsEditor.setValue(content);
 }
@@ -447,9 +565,31 @@ async function saveCurrentEditor() {
 }
 
 // Open folder and scan for projects
+// Get relative path from base folder
+function getRelativePath(fullPath, basePath) {
+  // Normalize path separators
+  const normalizedFull = fullPath.replace(/\\/g, '/');
+  const normalizedBase = basePath.replace(/\\/g, '/');
+  
+  if (normalizedFull.startsWith(normalizedBase)) {
+    let relative = normalizedFull.substring(normalizedBase.length);
+    if (relative.startsWith('/')) relative = relative.substring(1);
+    return relative || '.';
+  }
+  return fullPath;
+}
+
 async function openFolder() {
   const folderPath = await window.electronAPI.openFolder();
   if (!folderPath) return;
+  
+  currentFolderPath = folderPath;
+  
+  // Display folder path
+  const folderPathEl = document.getElementById('folderPath');
+  folderPathEl.textContent = folderPath;
+  folderPathEl.title = folderPath;
+  folderPathEl.style.display = 'block';
   
   const projectList = document.getElementById('projectList');
   projectList.innerHTML = '<li class="empty-state">Scanning...</li>';
@@ -465,12 +605,94 @@ async function openFolder() {
   for (const project of projects) {
     const li = document.createElement('li');
     li.dataset.path = project.projectPath;
+    li.dataset.projectDir = project.projectDir;
+    const relativePath = getRelativePath(project.projectPath, folderPath);
     li.innerHTML = `
       <div class="project-name">${project.name}</div>
-      <div class="project-path">${project.projectPath}</div>
+      <div class="project-path" title="${project.projectPath}">${relativePath}</div>
     `;
     li.addEventListener('click', () => loadProject(project));
+    li.addEventListener('contextmenu', (e) => showProjectContextMenu(e, project));
     projectList.appendChild(li);
+  }
+}
+
+// Show context menu for project
+function showProjectContextMenu(e, project) {
+  e.preventDefault();
+  
+  // Remove any existing context menu
+  const existingMenu = document.querySelector('.context-menu');
+  if (existingMenu) existingMenu.remove();
+  
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  
+  const openInExplorerLabel = platform === 'darwin' ? 'Open in Finder' : 'Open in Explorer';
+  
+  menu.innerHTML = `
+    <div class="context-menu-item" data-action="open-explorer">
+      <span class="icon">📂</span> ${openInExplorerLabel}
+    </div>
+  `;
+  
+  menu.style.left = `${e.clientX}px`;
+  menu.style.top = `${e.clientY}px`;
+  
+  document.body.appendChild(menu);
+  
+  // Handle menu item click
+  menu.querySelector('[data-action="open-explorer"]').addEventListener('click', () => {
+    window.electronAPI.openInExplorer(project.projectPath);
+    menu.remove();
+  });
+  
+  // Close menu on click outside
+  const closeMenu = (event) => {
+    if (!menu.contains(event.target)) {
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+    }
+  };
+  
+  // Delay adding click listener to prevent immediate close
+  setTimeout(() => {
+    document.addEventListener('click', closeMenu);
+  }, 0);
+}
+
+// Load demo data for screenshots
+async function loadDemoData() {
+  if (!demoData) return;
+  
+  currentFolderPath = demoData.folderPath;
+  
+  // Display folder path
+  const folderPathEl = document.getElementById('folderPath');
+  folderPathEl.textContent = demoData.folderPath;
+  folderPathEl.title = demoData.folderPath;
+  folderPathEl.style.display = 'block';
+  
+  const projectList = document.getElementById('projectList');
+  projectList.innerHTML = '';
+  
+  for (const project of demoData.projects) {
+    const li = document.createElement('li');
+    li.dataset.path = project.projectPath;
+    li.dataset.projectDir = project.projectDir;
+    const relativePath = getRelativePath(project.projectPath, demoData.folderPath);
+    li.innerHTML = `
+      <div class="project-name">${project.name}</div>
+      <div class="project-path" title="${project.projectPath}">${relativePath}</div>
+    `;
+    li.addEventListener('click', () => loadProject(project));
+    li.addEventListener('contextmenu', (e) => showProjectContextMenu(e, project));
+    projectList.appendChild(li);
+  }
+  
+  // Auto-select the first project
+  if (demoData.projects.length > 0) {
+    await loadProject(demoData.projects[0]);
   }
 }
 
@@ -490,11 +712,22 @@ function filterProjects(searchTerm) {
 async function init() {
   await initEditors();
   
+  // Get platform for context menu labels
+  platform = await window.electronAPI.getPlatform();
+  
+  // Check for demo mode
+  isDemoMode = await window.electronAPI.isDemoMode();
+  if (isDemoMode) {
+    demoData = await window.electronAPI.getDemoData();
+    await loadDemoData();
+  }
+  
   // Event listeners
   document.getElementById('openFolderBtn').addEventListener('click', openFolder);
   document.getElementById('welcomeOpenBtn').addEventListener('click', openFolder);
   document.getElementById('saveBtn').addEventListener('click', saveCurrentEditor);
   document.getElementById('formatBtn').addEventListener('click', formatJson);
+  document.getElementById('validationStatus').addEventListener('click', showValidationErrorPopup);
   document.getElementById('searchInput').addEventListener('input', (e) => filterProjects(e.target.value));
   
   // Tab switching
