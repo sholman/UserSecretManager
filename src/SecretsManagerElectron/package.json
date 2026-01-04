@@ -1,6 +1,6 @@
 {
   "name": "user-secrets-manager",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "User Secrets Manager - Manage your .NET User Secrets with ease",
   "homepage": "https://github.com/sholman/UserSecretManager",
   "main": "main.js",
@@ -9,9 +9,9 @@
     "demo": "electron . --demo",
     "screenshots": "node scripts/take-screenshots.js",
     "build": "electron-builder",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux"
+    "build:win": "electron-builder --win --publish never",
+    "build:mac": "electron-builder --mac --publish never",
+    "build:linux": "electron-builder --linux --publish never"
   },
   "keywords": [
     "dotnet",

@@ -52,8 +52,6 @@ jobs:
 
       - name: Build Electron app
         working-directory: src/SecretsManagerElectron
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build:${{ matrix.platform }}
 
       - name: Upload artifacts
