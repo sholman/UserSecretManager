@@ -1,0 +1,6 @@
+# Robots.txt for User Secrets Manager Website
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://usersecretsmanager.app/sitemap.xml
