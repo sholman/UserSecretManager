@@ -1,6 +1,6 @@
 {
   "name": "user-secrets-manager",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "User Secrets Manager - Manage your .NET User Secrets with ease",
   "homepage": "https://github.com/sholman/UserSecretManager",
   "main": "main.js",
@@ -25,6 +25,7 @@
   "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
+    "@electron/notarize": "^2.5.0",
     "@playwright/test": "^1.57.0",
     "electron": "^39.2.7",
     "electron-builder": "^25.1.8",
@@ -75,8 +76,13 @@
         }
       ],
       "icon": "assets/icon.png",
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist"
     },
+    "afterSign": "scripts/notarize.js",
     "linux": {
       "target": [
         "AppImage",
