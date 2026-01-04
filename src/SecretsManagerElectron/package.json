@@ -1,20 +1,73 @@
 {
-  "name": "secrets-manager",
+  "name": "user-secrets-manager",
   "version": "1.0.0",
-  "description": ".NET User Secrets Manager",
+  "description": "User Secrets Manager - Manage your .NET User Secrets with ease",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "demo": "electron . --demo"
+    "demo": "electron . --demo",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
   },
   "keywords": ["dotnet", "user-secrets", "secrets-manager"],
   "author": "",
   "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
-    "electron": "^39.2.7"
+    "electron": "^39.2.7",
+    "electron-builder": "^25.1.8"
   },
   "dependencies": {
     "monaco-editor": "^0.55.1"
+  },
+  "build": {
+    "appId": "dev.simonholman.user-secrets-manager",
+    "productName": "User Secrets Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!node_modules/**/README.md",
+      "!node_modules/**/CHANGELOG.md",
+      "!node_modules/**/*.ts"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "assets/icon.png",
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }
