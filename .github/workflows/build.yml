@@ -3,10 +3,16 @@ name: Build and Release
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/SecretsManagerElectron/**'
+      - '.github/workflows/build.yml'
     tags:
       - 'v*'
   pull_request:
     branches: [main]
+    paths:
+      - 'src/SecretsManagerElectron/**'
+      - '.github/workflows/build.yml'
 
 jobs:
   build:
