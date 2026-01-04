@@ -35,3 +35,4 @@ Thumbs.db
 
 # Electron builder
 .icon-ico/
+/planning
