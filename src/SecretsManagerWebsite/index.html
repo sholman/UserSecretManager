@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="User Secrets Manager - A modern desktop application for managing .NET User Secrets with an intuitive visual interface.">
+    <meta name="keywords" content="dotnet, user secrets, secrets manager, .NET, development tools, configuration">
+    <meta property="og:title" content="User Secrets Manager">
+    <meta property="og:description" content="Manage your .NET User Secrets with ease. Visual editing, AppSettings comparison, and cross-platform support.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://usersecretsmanager.app">
+    <meta property="og:image" content="https://usersecretsmanager.app/images/og-image.png">
+    <title>User Secrets Manager - Manage .NET User Secrets with Ease</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav container">
+            <a href="/" class="logo">
+                <img src="images/icon.svg" alt="User Secrets Manager" class="logo-icon">
+                <span>User Secrets Manager</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#screenshots">Screenshots</a></li>
+                <li><a href="#download">Download</a></li>
+                <li><a href="https://github.com/sholman/UserSecretManager" target="_blank" rel="noopener">GitHub</a></li>
+            </ul>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>Manage .NET User Secrets <span class="highlight">with Ease</span></h1>
+                    <p class="hero-description">
+                        A modern desktop application for managing your .NET User Secrets. 
+                        Visual editing, AppSettings comparison, and cross-platform support.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="#download" class="btn btn-primary">Download Now</a>
+                        <a href="#features" class="btn btn-secondary">Learn More</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="images/screenshot.png" alt="User Secrets Manager Screenshot">
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="features">
+            <div class="container">
+                <h2 class="section-title">Features</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🔍</div>
+                        <h3>Project Discovery</h3>
+                        <p>Automatically scans directories for .NET projects with User Secrets configured.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">✏️</div>
+                        <h3>Visual Secret Editing</h3>
+                        <p>Edit secrets using a rich JSON editor with syntax highlighting and validation.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📋</div>
+                        <h3>AppSettings Comparison</h3>
+                        <p>View your appsettings.json and appsettings.Development.json side-by-side with secrets.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📑</div>
+                        <h3>Copy AppSettings to Secrets</h3>
+                        <p>Quickly copy configuration from appsettings files to your secrets with one click.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💻</div>
+                        <h3>Cross-Platform</h3>
+                        <p>Works seamlessly on Windows, macOS, and Linux.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3>Auto-Updates</h3>
+                        <p>Automatically checks for and installs updates to keep you on the latest version.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="screenshots" class="screenshots">
+            <div class="container">
+                <h2 class="section-title">Screenshots</h2>
+                <div class="screenshot-gallery">
+                    <div class="screenshot-item">
+                        <img src="images/screenshot.png" alt="Main interface showing project list and secret editor">
+                        <p>Main interface with project discovery and JSON editor</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="what-are-secrets">
+            <div class="container">
+                <h2 class="section-title">What are .NET User Secrets?</h2>
+                <div class="info-content">
+                    <p>
+                        User Secrets is a .NET feature for storing sensitive configuration (API keys, connection strings, etc.) 
+                        outside your project directory during development. This keeps your secrets out of source control 
+                        and provides a secure way to manage development credentials.
+                    </p>
+                    <div class="paths-info">
+                        <h4>Secrets are stored in:</h4>
+                        <ul>
+                            <li><strong>Windows:</strong> <code>%APPDATA%\Microsoft\UserSecrets\&lt;UserSecretsId&gt;\secrets.json</code></li>
+                            <li><strong>macOS/Linux:</strong> <code>~/.microsoft/usersecrets/&lt;UserSecretsId&gt;/secrets.json</code></li>
+                        </ul>
+                    </div>
+                    <a href="https://docs.microsoft.com/en-us/aspnet/core/security/app-secrets" target="_blank" rel="noopener" class="btn btn-secondary">
+                        Learn More in Microsoft Docs
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="download" class="download">
+            <div class="container">
+                <h2 class="section-title">Download</h2>
+                <p class="download-intro">Choose the right version for your operating system:</p>
+                <div class="download-grid">
+                    <div class="download-card">
+                        <div class="os-icon">🪟</div>
+                        <h3>Windows</h3>
+                        <p>Windows 10 or later</p>
+                        <div class="download-options">
+                            <a href="https://github.com/sholman/UserSecretManager/releases/latest" class="btn btn-primary">Setup Installer</a>
+                            <a href="https://github.com/sholman/UserSecretManager/releases/latest" class="btn btn-secondary">Portable</a>
+                        </div>
+                    </div>
+                    <div class="download-card">
+                        <div class="os-icon">🍎</div>
+                        <h3>macOS</h3>
+                        <p>macOS 10.15 or later</p>
+                        <div class="download-options">
+                            <a href="https://github.com/sholman/UserSecretManager/releases/latest" class="btn btn-primary">Download .dmg</a>
+                        </div>
+                    </div>
+                    <div class="download-card">
+                        <div class="os-icon">🐧</div>
+                        <h3>Linux</h3>
+                        <p>Ubuntu, Debian, Fedora, etc.</p>
+                        <div class="download-options">
+                            <a href="https://github.com/sholman/UserSecretManager/releases/latest" class="btn btn-primary">AppImage</a>
+                            <a href="https://github.com/sholman/UserSecretManager/releases/latest" class="btn btn-secondary">.deb</a>
+                        </div>
+                    </div>
+                </div>
+                <p class="download-footer">
+                    All releases available on <a href="https://github.com/sholman/UserSecretManager/releases" target="_blank" rel="noopener">GitHub Releases</a>
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="images/icon.svg" alt="User Secrets Manager" class="logo-icon">
+                    <span>User Secrets Manager</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://github.com/sholman/UserSecretManager" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://github.com/sholman/UserSecretManager/issues" target="_blank" rel="noopener">Report an Issue</a>
+                    <a href="https://github.com/sholman/UserSecretManager/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+                </div>
+            </div>
+            <p class="copyright">&copy; 2026 User Secrets Manager. Open source and free to use.</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
