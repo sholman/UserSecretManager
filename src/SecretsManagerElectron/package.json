@@ -1,6 +1,6 @@
 {
   "name": "user-secrets-manager",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "User Secrets Manager - Manage your .NET User Secrets with ease",
   "homepage": "https://github.com/sholman/UserSecretManager",
   "main": "main.js",
@@ -81,10 +81,7 @@
       "gatekeeperAssess": false,
       "entitlements": "entitlements.mac.plist",
       "entitlementsInherit": "entitlements.mac.plist",
-      "type": "distribution",
-      "forceCodeSigning": true,
-      "strictVerify": true,
-      "signIgnore": []
+      "type": "distribution"
     },
     "afterSign": "scripts/notarize.js",
     "linux": {
