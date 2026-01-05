@@ -75,6 +75,7 @@ jobs:
           path: |
             src/SecretsManagerElectron/dist/*.exe
             src/SecretsManagerElectron/dist/*.dmg
+            src/SecretsManagerElectron/dist/*.zip
             src/SecretsManagerElectron/dist/*.AppImage
             src/SecretsManagerElectron/dist/*.deb
             src/SecretsManagerElectron/dist/*.yml
@@ -94,11 +95,14 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: List downloaded files
+        run: ls -la dist/
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: dist/*
-          draft: true
+          draft: false
           generate_release_notes: true
           body: |
             ## Download Instructions
@@ -108,6 +112,7 @@ jobs:
             | **Windows** | `User-Secrets-Manager-Setup-*.exe` | Installer (recommended) |
             | **Windows** | `User-Secrets-Manager-*.exe` | Portable version (no install needed) |
             | **macOS** | `User-Secrets-Manager-*.dmg` | Drag to Applications folder |
+            | **macOS** | `User-Secrets-Manager-*-mac.zip` | For auto-updates |
             | **Linux** | `User-Secrets-Manager-*.AppImage` | Universal package (most distros) |
             | **Linux** | `user-secrets-manager_*.deb` | Debian/Ubuntu package |
             
