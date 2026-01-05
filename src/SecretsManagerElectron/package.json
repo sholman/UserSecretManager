@@ -1,6 +1,6 @@
 {
   "name": "user-secrets-manager",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "User Secrets Manager - Manage your .NET User Secrets with ease",
   "homepage": "https://github.com/sholman/UserSecretManager",
   "main": "main.js",

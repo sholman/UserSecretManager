@@ -10,5 +10,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openInExplorer: (folderPath) => ipcRenderer.invoke('open-in-explorer', folderPath),
   getPlatform: () => ipcRenderer.invoke('get-platform'),
   isDemoMode: () => ipcRenderer.invoke('is-demo-mode'),
-  getDemoData: () => ipcRenderer.invoke('get-demo-data')
+  getDemoData: () => ipcRenderer.invoke('get-demo-data'),
+  getVersion: () => ipcRenderer.invoke('get-version')
 });

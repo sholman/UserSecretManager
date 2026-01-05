@@ -715,6 +715,10 @@ async function init() {
   // Get platform for context menu labels
   platform = await window.electronAPI.getPlatform();
   
+  // Display app version
+  const version = await window.electronAPI.getVersion();
+  document.getElementById('appVersion').textContent = `v${version}`;
+  
   // Check for demo mode
   isDemoMode = await window.electronAPI.isDemoMode();
   if (isDemoMode) {

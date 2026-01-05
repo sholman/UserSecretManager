@@ -146,6 +146,17 @@ body {
   background-color: transparent;
 }
 
+.sidebar-footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.app-version {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 .project-name {
   font-size: 14px;
   font-weight: 500;
